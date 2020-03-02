@@ -1,4 +1,4 @@
-# Data Modeling with Amazon Redshift
+# Data Pipeline with Airflow
 
 The goal of this project is to build ETL pipeline that extracts data from Amazon S3, stages it in Amazon Redshift and transforming data into dimensional tables for analysis. The data pipeline workflow will be automated and monitored using Apache Airflow. The data is about song listening activity and song/artist information. The data resides in S3, in a directory of JSON logs on user activity on the app, as well as a directory with JSON metadata on the songs. 
 
@@ -19,43 +19,27 @@ Cloning the repository will get you a copy of the project up and running on your
 
 ### Contents
 
-* `sql_queries.py` : All the sql queries are stored in this file and are referenced by other files.
-* `create_tables.py` : Drops and creates your tables. Can be used to reset tables.
-* `etl.py` : Processes all data files, loads data in Amazon Redshift tables
-* `dwh.cfg` : Contains Redshift cluster configuration and IAM role information
+* `create_tables.sql` : Create table sql queries used by the dag task
+* `sql_queries.py` : Sql statements to load data in the fact and dimension tables
+* `udac_example_dag.py` : Main file that orchestrates the Airflow dag and tasks
+* `stage_redshift.py` : Custom Airflow operator to stage data from S3 to Redshift
+* `load_fact.py` : Custom Airflow operator to load data into fact table in Redshift
+* `load_dimension.py` : Custom Airflow operator to load data into fact table in Redshift
+* `data_quality.py` : Custom Airflow operator to run quality checks on the data loaded in Redshift
 
 ### Database Design
-![alt text](https://github.com/ypatankar/PostgreETL/blob/master/Database%20Structure.png)
+![alt text](https://github.com/ypatankar/airflow-redshift-datapipeline/blob/master/airflowdag.png)
 
-Table Name | Sort Key | Distribution Style
---- | --- | ---
-fact_songplay | `start_time` | distkey
-dim_song | `song_id` | distkey
-dim_artist | `artist_id` | ALL
-dim_user | `user_id` | ALL
-dim_time | `start_time` | ALL
+Table Name | Type
+--- | ---
+songplays | fact
+songs | dimension
+artists | dimension
+users | dimension
+times | dimension
 
 ### Deployment Steps
-1. Execute `create_tables.py` to create and drop tables
-3. Run `etl.py` to process the data set loading
+1. Copy the cloned files into the Airflow dag bag folder where Airflow is setup
+3. Load Apache Airflow web UI and ensure that sparkify_dag shows in the list
+4. When the above setup is ready, switch on the dag and the dag will execute hourly
 
-### Executing SQL for analytics
-* Finding popular songs:
-```
-SELECT title AS song_title, 
-       COUNT(songplay_id) AS count
-FROM fact_songplay sp INNER JOIN dim_song s
-       ON sp.song_id = s.song_id
-GROUP BY title
-ORDER BY 2 DESC;
-```
-
-
-* User activity by location
-```
-SELECT location, 
-         COUNT(songplay_id) AS user_activity
-FROM fact_songplay
-GROUP BY location
-ORDER BY COUNT(songplay_id) desc;
-```
