@@ -27,9 +27,10 @@ Cloning the repository will get you a copy of the project up and running on your
 * `load_dimension.py` : Custom Airflow operator to load data into fact table in Redshift
 * `data_quality.py` : Custom Airflow operator to run quality checks on the data loaded in Redshift
 
-### Database Design
+### Airflow Dag
 ![alt text](https://github.com/ypatankar/airflow-redshift-datapipeline/blob/master/airflowdag.png)
 
+### Redshift ELT tables
 Table Name | Type
 --- | ---
 songplays | fact
