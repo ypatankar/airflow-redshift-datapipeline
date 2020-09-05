@@ -123,7 +123,13 @@ load_time_dimension_table = LoadDimensionOperator(
 run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
-    table_list = ["artists","songplays","songs","times","users"],
+    qa_check_list = [
+{'check_sql': "SELECT COUNT(*) FROM users WHERE userid is null", 'expected_result': 0},
+{'check_sql': "SELECT COUNT(*) FROM users", 'expected_result': 104},
+{'check_sql': "SELECT COUNT(*) FROM artists WHERE artistid is null", 'expected_result': 0},
+{'check_sql': "SELECT COUNT(*) FROM songplays WHERE playid is null AND userid IS NULL", 'expected_result': 0},
+{'check_sql': "SELECT COUNT(*) FROM songs WHERE songid is null", 'expected_result': 0}
+],
     redshift_conn_id="redshift"
 )
 
@@ -131,10 +137,8 @@ end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)
 
 # order of execution for the dag
 start_operator >> create_table
-create_table >> stage_events_to_redshift
-create_table >> stage_songs_to_redshift
-stage_events_to_redshift >> load_songplays_table
-stage_songs_to_redshift >> load_songplays_table
+create_table >> [stage_events_to_redshift, stage_songs_to_redshift]
+[stage_events_to_redshift, stage_songs_to_redshift] >> load_songplays_table
 load_songplays_table >> load_artist_dimension_table
 load_songplays_table >> load_time_dimension_table
 load_songplays_table >> load_user_dimension_table
